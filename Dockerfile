@@ -23,8 +23,13 @@
 FROM openjdk:8-jdk
 MAINTAINER Nicolas De Loof <nicolas.deloof@gmail.com>
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  docker.io \
+  && rm -rf /var/lib/apt/lists/*
+
 ENV HOME /home/jenkins
 RUN useradd -c "Jenkins user" -d $HOME -m jenkins
+RUN usermod -a -G docker jenkins
 
 ARG VERSION=2.60
 
@@ -32,10 +37,13 @@ RUN curl --create-dirs -sSLo /usr/share/jenkins/slave.jar https://repo.jenkins-c
   && chmod 755 /usr/share/jenkins \
   && chmod 644 /usr/share/jenkins/slave.jar
 
+RUN curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.2.4/bin/linux/amd64/kubectl \
+ && chmod +x /usr/local/bin/kubectl
+
 COPY jenkins-slave /usr/local/bin/jenkins-slave
 
+VOLUME /var/run/docker.sock
 VOLUME /home/jenkins
 WORKDIR /home/jenkins
-USER jenkins
 
 ENTRYPOINT ["jenkins-slave"]
